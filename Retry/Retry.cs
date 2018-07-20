@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Retry.Logger;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,21 +11,8 @@ namespace Retry
     /// </summary>
     public static class Retry
     {
-        /// <summary>
-        /// When Enabled,Calls the Appropriate Logger Method
-        /// </summary>
-        public static bool EnableLogging { get; set; }
-
-        /// <summary>
-        /// Delegate Method for Info Logger Method
-        /// </summary>
-        public static Action<string> InfoLogAction { get; set; }
-
-        /// <summary>
-        /// Delegate Method for Exception Logger Method
-        /// </summary>
-        public static Action<Exception> ExceptionLogAction { get; set; }
-
+        public static ITaskMessage taskMessenger=new TaskMessage();
+        
         /// <summary>
         /// Retry the specified operation the specified number of times, until there are no more retries or it succeeded
         /// without an exception.
@@ -59,46 +47,35 @@ namespace Retry
                 {
                     if (retry > 0)
                     {
-                        LogInfo($"Retrying Method Execution {operation.Method.Name} :retry attempt ({retry} of {retry-1})");
-
+                        LogManager.LogRetryCountMessage(taskMessenger.SetRetryCountMessage(operation.Method.Name, retryCount));
+                        LogManager.LogRetryDelayedMessage(taskMessenger.SetRetryDelayedMessage(operation.Method.Name, retryDelay));
+                        
                         Thread.Sleep(retryDelay);
-
-                        LogInfo($"Retrying Method Execution {operation.Method.Name} in {retryDelay.Hours} hour {retryDelay.Minutes} minutes {retryDelay.Seconds} seconds");
                     }
 
-                    LogInfo($"Started Executing Method {operation.Method.Name} at {DateTime.Now}");
-
+                    LogManager.LogMethodExecutionStartedMessage(taskMessenger.SetMethodExecutionStartedMessage(operation.Method.Name));
+                    
                     // Execute method
                     operation();
 
                     //If the Control reaches this line then the Task is Success:
                     taskResult.Status = TaskStatus.Success;
-                    LogInfo($"Method Execution {operation.Method.Name} success");
+                    LogManager.LogMethodExecutionSuccessMessage(taskMessenger.SetMethodExecutionSuccessMessage(operation.Method.Name));
 
                     break;
                 }
                 catch (Exception ex)
                 {
-                    LogInfo($"Method Execution {operation.Method.Name} failed");
+                    LogManager.LogMethodExecutionFailureMessage(taskMessenger.SetMethodExecutionFailureMessage(operation.Method.Name));
 
                     if (!retryOnExceptionType.Select(x => x.GetType().FullName).Contains(ex.GetType().FullName))
                         break;
                 }
             }
 
-            LogInfo($"Method Execution {operation.Method.Name} completed at {DateTime.Now}");
+            LogManager.LogMethodExecutionCompletedMessage(taskMessenger.SetMethodExecutionCompletedMessage(operation.Method.Name));
 
             return taskResult;
-        }
-
-        /// <summary>
-        /// Calls the Logger Actions if Logging is enabled
-        /// </summary>
-        /// <param name="message">message to log</param>
-        private static void LogInfo(string message)
-        {
-            if(EnableLogging)
-                InfoLogAction(message);
         }
     }
 }

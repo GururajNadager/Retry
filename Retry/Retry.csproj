@@ -40,7 +40,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logger\ConsoleLogger.cs" />
+    <Compile Include="Logger\ITaskLogger.cs" />
+    <Compile Include="Logger\ITaskMessage.cs" />
     <Compile Include="ITaskResult.cs" />
+    <Compile Include="Logger\LogManager.cs" />
+    <Compile Include="Logger\TaskMessage.cs" />
     <Compile Include="Retry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TaskResult.cs" />
